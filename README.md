@@ -1,7 +1,8 @@
-# jira_stats
-# needs creds.py with JIRA creds in it
-# needs a jql
-# format like
+jira_stats
+needs creds.py with JIRA creds in it
+needs a jql
+format like below (copy-paste to creds.py) in your local folder
+
 # email = 'xxx'
 # passw = 'xxx'
 # jql = 'some JQL'

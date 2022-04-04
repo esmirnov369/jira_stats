@@ -7,7 +7,7 @@ import numpy as np
 from sqlalchemy import create_engine
 
 class jira_issue():
-    def __init__(self, metadata,history):
+    def __init__(self, metadata,history,flag_count,flags_expl_list):
         self.issue_key = metadata['issue_key']
         self.summary = metadata['summary']
         self.issuetype = metadata['issuetype']
@@ -17,6 +17,8 @@ class jira_issue():
         self.issueSize = metadata['issueSize']
         self.history = history
         self.data_dict = metadata
+        self.flag_count = flag_count
+        self.flags_expl_list = flags_expl_list
     def calc_time(self):
         statuses = []
         self.history[0]['to'] = self.history[1]['from']
@@ -44,6 +46,14 @@ class jira_issue():
         for val in status_set:
            if self.data_dict[val] > 0:
                self.data_dict[val] = round(self.data_dict[val]/3600, 2)
+
+    def parse_flags(self):
+        self.data_dict['nflags'] = self.flag_count
+        for comment in range(len(self.flags_expl_list)):
+            key = 'flag_comment' + str(comment)
+            comment_text = self.flags_expl_list[comment]          
+            self.data_dict[key] = comment_text
+        print( self.data_dict)    
     def __repr__(self):
         return f"{self.data_dict}"
 
@@ -79,6 +89,8 @@ def populate_issue_obj(issue_key,jira_instance):
         issueSize = "NA"          
     transact_list = []
     transact_list.append({'to':'CREATION','from':'void','time_stamp':issue.fields.created})
+    flags_expl_list = []
+    flag_count = 0
     for history in issue.changelog.histories:     
         change_dict = {}
         change_dict['to'] = ''
@@ -90,10 +102,19 @@ def populate_issue_obj(issue_key,jira_instance):
                 change_dict['to'] =  (item.toString) # new value
                 transact_list.append(change_dict)
             if item.field == "Flagged":
-                print(f'flagged @ {history.created}' )
+                flag_count = flag_count + 1
+                flag_time = parse(history.created)
+                for comment in issue.fields.comment.comments: 
+                    time_comment = parse(comment.created)
+                    duration = (time_comment - flag_time ).total_seconds()
+                    if duration < 1 and duration > 0 and comment.body[0:6] == '(flag)':
+                        reason = comment.body.replace('\n'," ")
+                        reason = reason.replace('\r'," ")
+                        flags_expl_list.append(reason)
     issue_meta = {'issueSize':issueSize,'fixVersion':fixVersion, 'epicLink': epicLink, 'issue_key':issue_key,'summary':summary,'issuetype':issuetype,'implementer':implementer}
-    issue_object = jira_issue(metadata= issue_meta,history=transact_list)
-    issue_object.calc_time()    
+    issue_object = jira_issue(metadata= issue_meta,history=transact_list,flag_count=flag_count,flags_expl_list = flags_expl_list)
+    issue_object.calc_time()
+    issue_object.parse_flags()    
     return issue_object
 
 

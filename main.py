@@ -4,7 +4,10 @@ from dateutil.parser import parse
 import creds
 import pandas as pd 
 import numpy as np 
+
 from sqlalchemy import create_engine
+
+settings = {'parse_flags':False}
 
 class jira_issue():
     def __init__(self, metadata,history,flag_count,flags_expl_list):
@@ -13,7 +16,6 @@ class jira_issue():
         self.issuetype = metadata['issuetype']
         self.implementer = metadata['implementer']
         self.fixVersion = metadata['fixVersion']
-        self.epicLink = metadata['epicLink']
         self.issueSize = metadata['issueSize']
         self.history = history
         self.data_dict = metadata
@@ -71,22 +73,9 @@ def populate_issue_obj(issue_key,jira_instance):
     issue = jira_instance.issue(issue_key,expand='changelog')
     summary = issue.fields.summary
     issuetype = issue.fields.issuetype.name
-    try:
-        implementer = issue.fields.customfield_10502.displayName
-    except:
-        implementer = "NA"
-    try:
-        fixVersion = issue.fields.fixVersions[0].name    
-    except:
-        fixVersion = "NA"
-    try:    
-        epicLink = issue.fields.customfield_11914
-    except:
-        epicLink = "NA"
-    try:    
-        issueSize = issue.fields.customfield_169100
-    except:
-        issueSize = "NA"          
+    implementer = issue.fields.customfield_10502.displayName if issue.fields.customfield_10502 else "N/A"
+    fixVersion = issue.fields.fixVersions[0].name if issue.fields.fixVersions else "N/A"  
+    issueSize = issue.fields.customfield_169100.value if issue.fields.customfield_169100 else "NA"        
     transact_list = []
     transact_list.append({'to':'CREATION','from':'void','time_stamp':issue.fields.created})
     flags_expl_list = []
@@ -111,10 +100,11 @@ def populate_issue_obj(issue_key,jira_instance):
                         reason = comment.body.replace('\n'," ")
                         reason = reason.replace('\r'," ")
                         flags_expl_list.append(reason)
-    issue_meta = {'issueSize':issueSize,'fixVersion':fixVersion, 'epicLink': epicLink, 'issue_key':issue_key,'summary':summary,'issuetype':issuetype,'implementer':implementer}
+    issue_meta = {'issueSize':issueSize,'fixVersion':fixVersion,  'issue_key':issue_key,'summary':summary,'issuetype':issuetype,'implementer':implementer}
     issue_object = jira_issue(metadata= issue_meta,history=transact_list,flag_count=flag_count,flags_expl_list = flags_expl_list)
     issue_object.calc_time()
-    issue_object.parse_flags()    
+    if settings['parse_flags']:
+        issue_object.parse_flags()    
     return issue_object
 
 
@@ -135,13 +125,14 @@ def dump_to_csv(issues_list,jira):
 
 
 def main():
+   
     jira_options = creds.options
     login = creds.email
     passw = creds.passw
     jira = JIRA(options=jira_options, basic_auth=(login, passw))
     try:   
         jql_query = creds.jql
-        issues_list = jira.search_issues(jql_query,maxResults=400) 
+        issues_list = jira.search_issues(jql_query,maxResults=10) 
     except:
         print('JQL or Auth error')
         return

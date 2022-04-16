@@ -7,6 +7,7 @@ import creds
 settings = {'parse_flags': False}
 
 
+
 class JiraIssue():
     '''jira ticket instance that has some descriptive fields, 
     an extract of history and a data_dict
@@ -18,6 +19,8 @@ class JiraIssue():
         self.implementer = metadata['implementer']
         self.fix_version = metadata['fixVersion']
         self.issue_size = metadata['issueSize']
+        self.team = metadata['team']
+        self.parent = metadata['parent']
         self.history = history
         self.data_dict = metadata
         self.flag_count = flag_count
@@ -26,13 +29,13 @@ class JiraIssue():
     def calc_time(self):
         """iterate thru a list of status change events and calc time
         populates a data_dict member of the instance with time for each stat"""
-        statuses = []
+        statuses = set()
         self.history[0]['to'] = self.history[1]['from']
+        self.data_dict['ready_time'] = 'None'
         for val in self.history:
             status = val['to']
-            statuses.append(status)
-            self.data_dict[status] = 0
-            self.data_dict['ready_time'] = 'None'
+            statuses.add(status)
+            self.data_dict[status] = 0         
         for index, val in enumerate(self.history):
             if val['from'] == 'void':
                 self.data_dict['created_time'] = val['time_stamp']
@@ -44,16 +47,14 @@ class JiraIssue():
                 time_prev = parse(self.history[index-1]['time_stamp'])
                 self.data_dict[status_name] = self.data_dict[status_name] + \
                     (time_event - time_prev).total_seconds()
-        self.data_dict['created_time'] = parse_date_convert(
+        self.data_dict['created_time'] = parse_date(
             self.data_dict['created_time'])
         if self.data_dict['ready_time'] != 'None':
-            self.data_dict['ready_time'] = parse_date_convert(
+            self.data_dict['ready_time'] = parse_date(
                 self.data_dict['ready_time'])
-
-        status_set = set(statuses)
-        for val in status_set:
+        for val in statuses:
             if self.data_dict[val] > 0:
-                self.data_dict[val] = round(self.data_dict[val]/3600, 2)
+                self.data_dict[val] = round((self.data_dict[val]/3600), 2)
 
     def parse_flags(self):
         '''
@@ -71,7 +72,7 @@ class JiraIssue():
         return f"{self.data_dict}"
 
 
-def parse_date_convert(date, fmt=None):
+def parse_date(date, fmt=None):
     '''
     converts data from a long timestamp to a better one
     '''
@@ -87,9 +88,17 @@ def populate_issue_obj(issue_key, jira_instance):
     issue = jira_instance.issue(issue_key, expand='changelog')
     summary = issue.fields.summary
     issuetype = issue.fields.issuetype.name
+    if issuetype in ('Acceptance bug','Design sub-task'):
+        parent = issue.fields.parent.key
+    else:
+        parent = 0    
     implementer = issue.fields.customfield_10502.displayName if issue.fields.customfield_10502 else "N/A"
     fix_version = issue.fields.fixVersions[0].name if issue.fields.fixVersions else "N/A"
-    issue_size = issue.fields.customfield_169100.value if issue.fields.customfield_169100 else "NA"
+    team = issue.fields.customfield_156807.value 
+    try:
+        issue_size = issue.fields.customfield_169100.value 
+    except:
+        issue_size = "NA"
     transact_list = []
     transact_list.append({'to': 'CREATION', 'from': 'void',
                          'time_stamp': issue.fields.created})
@@ -116,12 +125,13 @@ def populate_issue_obj(issue_key, jira_instance):
                         reason = reason.replace('\r', " ")
                         flags_expl_list.append(reason)
     issue_meta = {'issueSize': issue_size, 'fixVersion': fix_version,  'issue_key': issue_key,
-                  'summary': summary, 'issuetype': issuetype, 'implementer': implementer}
+                  'summary': summary, 'issuetype': issuetype, 'implementer': implementer, 'team':team, 'parent': parent }
     issue_object = JiraIssue(metadata=issue_meta, history=transact_list,
                               flag_count=flag_count, flags_expl_list=flags_expl_list)
     issue_object.calc_time()
     if settings['parse_flags']:
         issue_object.parse_flags()
+    print(issue_meta)    
     return issue_object
 
 
@@ -134,7 +144,10 @@ def dump_to_csv(issues_list):
     for issue in issues_list:
         df = df.append(issue.data_dict, ignore_index=True)
     df['created_time'] = pd.to_datetime(df['created_time'])
-    df['ready_time'] = pd.to_datetime(df['ready_time']) if df['ready_time'] else "N/A"
+    try:
+        df['ready_time'] = pd.to_datetime(df['ready_time'])
+    except:
+        df['ready_time'] = "NA"
     df.to_csv('out.csv', index=False)
 
 
@@ -158,13 +171,13 @@ def main():
     jira = JIRA(options=jira_options, basic_auth=(login, passw))
     try:
         jql_query = creds.jql
-        issues_list = jira.search_issues(jql_query, maxResults=10)
+        issues_list = jira.search_issues(jql_query, maxResults=588)
     except:
         print('JQL or Auth error')
         return
     populated_list = get_raw_data(issues_list, jira)
     dump_to_csv(populated_list)
-
+    print(f'done processing {len(issues_list)} issues')
 
 if __name__ == "__main__":
     main()

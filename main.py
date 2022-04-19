@@ -66,7 +66,7 @@ class JiraIssue():
             key = 'flag_comment' + str(comment)
             comment_text = self.flags_expl_list[comment]
             self.data_dict[key] = comment_text
-        print(self.data_dict)
+
 
     def __repr__(self):
         return f"{self.data_dict}"
@@ -91,7 +91,7 @@ def populate_issue_obj(issue_key, jira_instance):
     if issuetype in ('Acceptance bug','Design sub-task'):
         parent = issue.fields.parent.key
     else:
-        parent = 0    
+        parent = None    
     implementer = issue.fields.customfield_10502.displayName if issue.fields.customfield_10502 else "N/A"
     fix_version = issue.fields.fixVersions[0].name if issue.fields.fixVersions else "N/A"
     team = issue.fields.customfield_156807.value 
@@ -131,7 +131,7 @@ def populate_issue_obj(issue_key, jira_instance):
     issue_object.calc_time()
     if settings['parse_flags']:
         issue_object.parse_flags()
-    print(issue_meta)    
+    print(f'{issuetype} {issue_key} done')    
     return issue_object
 
 
@@ -171,7 +171,7 @@ def main():
     jira = JIRA(options=jira_options, basic_auth=(login, passw))
     try:
         jql_query = creds.jql
-        issues_list = jira.search_issues(jql_query, maxResults=588)
+        issues_list = jira.search_issues(jql_query, maxResults=600)
     except:
         print('JQL or Auth error')
         return

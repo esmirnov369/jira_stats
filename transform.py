@@ -3,8 +3,6 @@ from dateutil.parser import parse
 from importlib_metadata import metadata
 import pandas as pd
 
-
-
 class JiraIssue():
     '''jira ticket instance that has some descriptive fields, 
     an extract of history and a data_dict
@@ -18,10 +16,12 @@ class JiraIssue():
         self.issue_size = metadata['issue_size']
         self.team = metadata['team']
         self.parent = metadata['parent']
+        self.project = metadata['project']
         self.history = history
         self.data_dict = metadata
 
     def calc_time(self):
+        print(f'processing {self.issue_key}')
         """iterate thru a list of status change events and calc time
         populates a data_dict member of the instance with time for each stat"""
         statuses = set()
@@ -74,27 +74,21 @@ def dump_to_csv(issues_list):
     for issue in issues_list:
         df = df.append(issue.data_dict, ignore_index=True)
     df['created_time'] = pd.to_datetime(df['created_time'])
-    try:
-        df['ready_time'] = pd.to_datetime(df['ready_time'])
-    except:
-        df['ready_time'] = "NA"
-    df.to_csv('out1.csv', index=False)
+    df.to_csv('output.csv', index=False)
 
 
+def main():
 
+    with open('json_data.json') as json_file:
+        data = json.load(json_file)        
+    issue_list = []
+    for list_item in data:
+        metadata=list_item['metadata']
+        history = list_item['history']
+        issue = JiraIssue(metadata,history)
+        issue.calc_time()
+        issue_list.append(issue)
+    dump_to_csv(issue_list)
 
-
-with open('json_data.json') as json_file:
-    data = json.load(json_file)
-    
-
-issue_list = []
-for list_item in data:
-    metadata=list_item['metadata']
-    history = list_item['history']
-    issue = JiraIssue(metadata,history)
-    issue.calc_time()
-    issue_list.append(issue)
-
-
-dump_to_csv(issue_list)
+if __name__ == "__main__":
+    main()

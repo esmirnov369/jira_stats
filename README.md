@@ -8,3 +8,8 @@ format like below (copy-paste to creds.py) in your local folder
 # jql = 'some JQL'
 # options = {'server': 'yourjirasite','rest_api_version':2, 'expand':'changelog'}
 
+real life example
+#email = 'myusername'
+#passw = 'Welcome01'
+#jql = r'project = API and team = Credit and status was in (Ready) after startOfYear()'
+#options = {'server': 'myjirasite','rest_api_version':2, 'expand':'changelog'}

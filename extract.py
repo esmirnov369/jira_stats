@@ -3,7 +3,7 @@ import creds
 import json
 
 # gets issue object via jira API, saves into a json
-#no test
+#NO_TEST
 def get_jira_data(issue_key, jira_instance):
     issueobj = jira_instance.issue(issue_key, expand='changelog')
     issuestr = json.dumps(issueobj.raw,default=vars)     
@@ -19,11 +19,12 @@ def main():
     jira = JIRA(options=jira_options, basic_auth=(login, passw))
     try:
         jql_query = creds.jql
-        issues_list = jira.search_issues(jql_query, maxResults=2000)
+        issues_list = jira.search_issues(jql_query, maxResults=2100)
     except:
         print('JQL or Auth error')
         return
 
+    #create a mock json for unit tests with just one issue downloaded
     mock_data = jira.search_issues(jql_query, maxResults=1)
     for issue in mock_data:
         mock_obj = get_jira_data(issue.key, jira)

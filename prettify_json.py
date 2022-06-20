@@ -17,7 +17,11 @@ def populate_jira_from_json(json_string):
     try:
         team = issue["fields"]["customfield_156807"]["value"]
     except:
-        team = 'N/A'     
+        team = 'N/A'
+    try:
+        reason =  issue["fields"]["customfield_158100"][0]["value"]
+    except:
+        reason = 'N/A'              
     project = issue["fields"]["project"]["key"]
     try:
         issue_size = issue["fields"]["customfield_169100"]["value"] 
@@ -43,8 +47,7 @@ def populate_jira_from_json(json_string):
                 transact_list.append(change_dict)
     metadata = {'issue_size': issue_size, 'fix_version': fix_version,  'issue_key': issue_key, 'summary': summary,
                  'issue_type': issue_type, 'implementer': implementer, 'team':team, 'parent': parent, 'project': project,
-                 'epic_name': epic_name
-                   }
+                 'epic_name': epic_name, 'reason': reason}
     issue_dict = {}
     issue_dict['metadata'] = metadata
     issue_dict['history'] = transact_list
@@ -62,6 +65,6 @@ def main():
     json_string = json.dumps(pretty_list)     
     with open('json_data.json', 'w') as outfile:
         outfile.write(json_string)
-
+    print(f'prettified')
 if __name__ == "__main__":
     main()

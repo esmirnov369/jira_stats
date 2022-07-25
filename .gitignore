@@ -6,5 +6,6 @@ cycle_time.py
 *.twb
 *.pyc
 __pycache__/
-*.py[cod]__pycache__
+*.py[cod]
+__pycache__
 Reporting

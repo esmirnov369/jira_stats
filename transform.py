@@ -74,7 +74,7 @@ def dump_to_csv(issues_list):
     for issue in issues_list:
         df = df.append(issue.data_dict, ignore_index=True)
     df['created_time'] = pd.to_datetime(df['created_time'])
-    df.to_csv('output.csv', index=False)
+    df.to_csv('Reporting/output.csv', index=False)
 
 
 def main():

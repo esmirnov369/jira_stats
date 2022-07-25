@@ -4,3 +4,7 @@ sql_processor.py
 cycle_time.py
 *.json
 *.twb
+*.pyc
+__pycache__/
+*.py[cod]__pycache__
+Reporting

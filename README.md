@@ -1,15 +1,13 @@
-jira_stats
-needs creds.py with JIRA creds in it
-needs a jql
-format like below (copy-paste to creds.py) in your local folder
+needs a config.ini provided with a format like
 
-# email = 'xxx'
-# passw = 'xxx'
-# jql = 'some JQL'
-# options = {'server': 'yourjirasite','rest_api_version':2, 'expand':'changelog'}
+[creds]
+email = e.a.smith
+passw = ZiggyJiggy
 
-real life example
-#email = 'myusername'
-#passw = 'Welcome01'
-#jql = r'project = API and team = Credit and status was in (Ready) after startOfYear()'
-#options = {'server': 'myjirasite','rest_api_version':2, 'expand':'changelog'}
+
+[settings]
+
+jql =  PROJECT and team = Design and status was in (Ready) AFTER startOfYear()
+server = https://myjira.com.site/
+rest_api_version = 2 
+expand = changelog

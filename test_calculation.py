@@ -6,6 +6,10 @@ import pandas as pd
 import json
 
 
+class TestConnection(unittest.TestCase):
+    
+
+
 class TestIssue(unittest.TestCase):
     metadata = {'issue_size': 'XS', 
                 'fix_version': 'N/A', 

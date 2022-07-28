@@ -11,7 +11,7 @@ def main():
     settings['APIcycle_column_names'] = ['Planned','Specification Review', 'ToDo', 'Ready to Develop','In Progress','Review','Resolved','Testing']
     settings['APIactive_column_names'] = ['Specification Review','In Progress','Review','Testing']
     settings['APIpassive_column_names'] = ['Planned', 'ToDo', 'Ready to Develop','Resolved']
-
+    settings['APIlead_column_names'] = ['Planned','Specification Review', 'ToDo', 'Ready to Develop','In Progress','Review','Resolved','Testing']
     projects = df['project'].unique()
 
     df['Cycle_RTD_hours']= df[settings['APIcycle_column_names']].sum(axis=1)

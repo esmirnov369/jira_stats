@@ -7,8 +7,9 @@ import json
 
 
 class TestConnection(unittest.TestCase):
-    
-
+    def test_config_reader(self):
+        self.jira_options = populate_settings_from_config('config.ini')
+        self.assertTrue(len(self.jira_options)==3)       
 
 class TestIssue(unittest.TestCase):
     metadata = {'issue_size': 'XS', 

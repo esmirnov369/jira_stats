@@ -2,7 +2,6 @@ from jira import JIRA
 import json
 from configparser import ConfigParser
 
-#TODO write tests for a) reading config b) connecting to JIRA instance
 def populate_settings_from_config(config_file_name):
     configur = ConfigParser()
     configFilePath = config_file_name

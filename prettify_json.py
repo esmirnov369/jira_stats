@@ -1,8 +1,6 @@
-import jsons
 import json
 
 #gets json string, parses into data structures
-#need test
 def populate_jira_from_json(json_string):
     issue = json.loads(json_string)
     summary = issue["fields"]["summary"]
@@ -65,6 +63,6 @@ def main():
     json_string = json.dumps(pretty_list)     
     with open('json_data.json', 'w') as outfile:
         outfile.write(json_string)
-    print(f'prettified')
+    print(f'prettified {len(pretty_list)} issues')
 if __name__ == "__main__":
     main()

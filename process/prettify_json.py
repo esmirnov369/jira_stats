@@ -51,18 +51,3 @@ def populate_jira_from_json(json_string):
     issue_dict['history'] = transact_list
     print(f'finished processing {issue_key}')
     return issue_dict
-
-
-def main():  
-    with open('raw_jsondata.json') as json_file:
-        data = json.load(json_file)
-   
-    pretty_list = []
-    for issue in data:
-        pretty_list.append(populate_jira_from_json(issue))
-    json_string = json.dumps(pretty_list)     
-    with open('json_data.json', 'w') as outfile:
-        outfile.write(json_string)
-    print(f'prettified {len(pretty_list)} issues')
-if __name__ == "__main__":
-    main()

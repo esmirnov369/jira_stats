@@ -65,7 +65,7 @@ def parse_date(date, fmt=None):
     return str(get_date_obj.strftime(fmt))
 
 
-def dump_to_csv(issues_list):
+def dump_to_csv(issues_list,folder):
     '''
     iterate over issues list and append them one by one to a dataframe, save
     data frame on the drive
@@ -74,7 +74,7 @@ def dump_to_csv(issues_list):
     for issue in issues_list:
         df = df.append(issue.data_dict, ignore_index=True)
     df['created_time'] = pd.to_datetime(df['created_time'])
-    df.to_csv('Reporting/output.csv', index=False)
+    df.to_csv(folder+'/output.csv', index=False)
 
 
 def main():

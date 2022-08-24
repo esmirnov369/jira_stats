@@ -1,14 +1,14 @@
 import unittest
-from transform import JiraIssue
-from extract import *
-from prettify_json import *
+import process
 import pandas as pd
 import json
+import os
 
 
-class TestConnection(unittest.TestCase):
+class Test_Config(unittest.TestCase):
     def test_config_reader(self):
-        self.jira_options = populate_settings_from_config('config.ini')
+        optionset =  process.populate_settings_from_config(os.getcwd() + '\\data\\config.ini')
+        self.jira_options = optionset[0]
         self.assertTrue(len(self.jira_options)==3)       
 
 class TestIssue(unittest.TestCase):
@@ -35,22 +35,22 @@ class TestIssue(unittest.TestCase):
    
     #open a raw json file, try to populate a dict from it, exepect it to happen without issues
     def test_populate_jira_from_json(self):
-        with open('mock_raw.json') as json_file:
+        with open('reporting/mock_raw.json') as json_file:
             data_str = json.load(json_file)
         data_raw = json.dumps(data_str)            
-        self.issue_dict = populate_jira_from_json(data_raw)    
+        self.issue_dict = process.populate_jira_from_json(data_raw)    
         self.assertTrue(type(self.issue_dict) == dict)
         self.assertTrue(len(self.issue_dict)>0)
         self.assertTrue(len(self.issue_dict["metadata"]["issue_key"])>0)
 
     #test how JiraIssue works from a poorly created mock
     def test_create_issue(self, metadata=metadata, history=history):
-        mock_issue = JiraIssue(metadata, history)
+        mock_issue = process.JiraIssue(metadata, history)
         self.assertTrue(len(mock_issue.history) > 0)
 
     #try to calculate time values based on mock's preset transitions
     def test_calc_time(self, metadata=metadata, history=history):
-        mock_issue = JiraIssue(metadata, history)
+        mock_issue = process.JiraIssue(metadata, history)
         mock_issue.calc_time()
         self.assertEqual(mock_issue.data_dict['New'], 2304.09)
         self.assertEqual(mock_issue.data_dict['Specification'], 1.0)
@@ -66,7 +66,7 @@ class TestIssue(unittest.TestCase):
     #assert that we can create a data frame based on a jira issue
     def test_create_data(self, metadata=metadata, history=history):
         df = pd.DataFrame()
-        mock_issue = JiraIssue(metadata, history)
+        mock_issue = process.JiraIssue(metadata, history)
         issues_list = [mock_issue]
         for issue in issues_list:
             issue.calc_time()

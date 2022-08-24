@@ -35,7 +35,7 @@ class JiraIssue():
             if val['from'] == 'void':
                 self.data_dict['created_time'] = val['time_stamp']
             else:
-                if val['to'] == 'Ready':
+                if val['to'] in ('Ready','Done'):
                     self.data_dict['ready_time'] = val['time_stamp']
                 status_name = val['from']
                 time_event = parse(val['time_stamp'])
@@ -75,20 +75,5 @@ def dump_to_csv(issues_list,folder):
         df = df.append(issue.data_dict, ignore_index=True)
     df['created_time'] = pd.to_datetime(df['created_time'])
     df.to_csv(folder+'/output.csv', index=False)
+    return df
 
-
-def main():
-
-    with open('json_data.json') as json_file:
-        data = json.load(json_file)        
-    issue_list = []
-    for list_item in data:
-        metadata=list_item['metadata']
-        history = list_item['history']
-        issue = JiraIssue(metadata,history)
-        issue.calc_time()
-        issue_list.append(issue)
-    dump_to_csv(issue_list)
-
-if __name__ == "__main__":
-    main()

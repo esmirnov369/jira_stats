@@ -4,13 +4,14 @@ import json
 
 def main():
     #read config
-    jira_options = process.populate_settings_from_config(os.getcwd() + '\\data\\config.ini')
-    
+    option_set = process.populate_settings_from_config(os.getcwd() + '\\data\\config.ini')
+    jira_options = option_set[0]
+    sql_options = option_set[1]
     #create a jira connection instance
     #run query thru connection
     try:
         jira = process.JIRA(options=jira_options['settings'], basic_auth=(jira_options['creds']['login'], jira_options['creds']['passw']))
-        issues_list = jira.search_issues(jira_options['jql'], maxResults=5)
+        issues_list = jira.search_issues(jira_options['jql'], maxResults=1555)
         jql_success = True
     except:
         print('JQL or Auth error')
@@ -45,8 +46,9 @@ def main():
         issue = process.JiraIssue(metadata,history)
         issue.calc_time()
         issue_list.append(issue)
-    process.dump_to_csv(issue_list,'reporting')
+    df = process.dump_to_csv(issue_list,'reporting')
 
+    process.push_postgres(df,'jira',sql_options)
 
 
 if __name__ == "__main__":

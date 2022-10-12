@@ -5,7 +5,7 @@ def populate_jira_from_json(json_string):
     issue = json.loads(json_string)
     summary = issue["fields"]["summary"]
     issue_type = issue["fields"]["issuetype"]["name"]
-    if issue_type in ('Acceptance bug','Design sub-task'):
+    if issue_type in ('Acceptance bug','Design sub-task','Sub-task'):
         parent = issue["fields"]["parent"]["key"]
     else:
         parent = None    

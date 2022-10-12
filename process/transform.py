@@ -65,7 +65,7 @@ def parse_date(date, fmt=None):
     return str(get_date_obj.strftime(fmt))
 
 
-def dump_to_csv(issues_list,folder):
+def dataframe_manipulations(issues_list,folder,filename):
     '''
     iterate over issues list and append them one by one to a dataframe, save
     data frame on the drive
@@ -74,6 +74,19 @@ def dump_to_csv(issues_list,folder):
     for issue in issues_list:
         df = df.append(issue.data_dict, ignore_index=True)
     df['created_time'] = pd.to_datetime(df['created_time'])
-    df.to_csv(folder+'/output.csv', index=False)
-    return df
+    df['ready_time'] = pd.to_datetime(df.ready_time)   
+    bugs_df = df[df['parent'].str.len() > 0]
+    bugs_df = (bugs_df.groupby(by="parent").size())
+    combo = pd.merge(df,bugs_df.rename('defects'),how='left',left_on=['issue_key'],right_on=['parent'])
+    accept_array = combo[combo['issue_type'].str.contains("Acceptance bug")]
+    accept_array = accept_array.groupby(['parent'])['parent'].count()
+    des_array = combo[combo['issue_type'].str.contains("Design sub-task")]
+    des_array = des_array.groupby(['parent'])['parent'].count()
+    defects_array = pd.DataFrame(dict(n_accept = accept_array, n_design = des_array)).reset_index()
+    defects_array = defects_array.fillna(0)
+    defects_array.rename(columns = {'parent':'merge_key'}, inplace = True)
+    combo = pd.merge(combo,defects_array,how='left',left_on=['issue_key'],right_on=['merge_key'])
+    combo= combo.drop(['merge_key'], axis=1)
+    combo.to_csv(folder+'/'+filename+'.csv', index=False)
+    return combo
 

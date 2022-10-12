@@ -16,7 +16,7 @@ def main():
     except:
         print('JQL or Auth error')
         jql_success = False
-        
+        return
     
     if jql_success:
         with open('reporting/mock_raw.json', 'w') as outfile:
@@ -46,10 +46,8 @@ def main():
         issue = process.JiraIssue(metadata,history)
         issue.calc_time()
         issue_list.append(issue)
-    df = process.dump_to_csv(issue_list,'reporting')
-
-    process.push_postgres(df,'jira',sql_options)
-
+    df = process.dataframe_manipulations(issue_list,'reporting','output')
+    return
 
 if __name__ == "__main__":
     main()

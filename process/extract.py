@@ -5,7 +5,7 @@ from configparser import ConfigParser
 def populate_settings_from_config(config_file_name):
     configur = ConfigParser()
     configFilePath = config_file_name
-    configur.read(configFilePath) 
+    configur.read(configFilePath,encoding='UTF-8') 
     login =  configur.get('creds','email')
     passw =  configur.get('creds','passw')
     server = configur.get('settings','server')

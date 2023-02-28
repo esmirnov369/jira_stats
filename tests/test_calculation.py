@@ -1,17 +1,22 @@
 import unittest
-import process
 import pandas as pd
 import json
 import os
-
+import process
 
 class Test_Config(unittest.TestCase):
     def test_config_reader(self):
-        optionset =  process.populate_settings_from_config(os.getcwd() + '\\data\\config.ini')
-        self.jira_options = optionset[0]
-        self.assertTrue(len(self.jira_options)==3)       
+        data_obj =  process.populate_settings_from_config(os.getcwd() + '\\data\\config.ini')
+        self.jira_options = data_obj['jira_options']
+        self.sql_options = data_obj['sql_options']
+        settings = self.jira_options["settings"]
+        creds = self.jira_options["creds"]
+        for key in creds.keys():
+            self.assertTrue(len(creds[key])>0)
+        jql = self.jira_options["jql"]
+        self.assertTrue(len(settings)>0 and len(creds)>0 and len(jql)>0)
 
-class TestIssue(unittest.TestCase):
+class Test_Issue(unittest.TestCase):
     metadata = {'issue_size': 'XS', 
                 'fix_version': 'N/A', 
                 'issue_key': 'API-12345',
@@ -19,7 +24,8 @@ class TestIssue(unittest.TestCase):
                 'issue_type': 'Engineering Task',
                 'implementer': 'First Name Last Name',
                 'team':'API',
-                'project': 'API', 
+                'project': 'API',
+                'priority': 'Blocker', 
                 'parent': '0'}
     history = [ {'to': 'New', 'from': 'void', 'time_stamp': '2022-01-02T10:26:06.319+0300'}, 
                 {'to': 'Specification', 'from': 'New', 'time_stamp': '2022-04-08T10:31:45.398+0300'},
@@ -30,18 +36,19 @@ class TestIssue(unittest.TestCase):
                 {'to': 'Ready to Develop', 'from': 'ToDo', 'time_stamp': '2022-04-08T15:32:05.647+0300'}, 
                 {'to': 'In Progress', 'from': 'Ready to Develop', 'time_stamp': '2022-04-08T16:32:11.820+0300'},
                 {'to': 'Review', 'from': 'In Progress', 'time_stamp': '2022-04-08T17:19:30.117+0300'}, 
-                {'to': 'Ready', 'from': 'Review', 'time_stamp': '2022-04-08T20:19:35.219+0300'}]
-
+                {'to': 'Ready', 'from': 'Review', 'time_stamp': '2022-04-08T20:19:35.219+0300'},
+                {'to': 'Released', 'from': 'Ready', 'time_stamp': '2022-05-08T20:20:32.219+0300'}]
    
     #open a raw json file, try to populate a dict from it, exepect it to happen without issues
     def test_populate_jira_from_json(self):
-        with open('reporting/mock_raw.json') as json_file:
+        with open('reporting/json_dump.json') as json_file:
             data_str = json.load(json_file)
-        data_raw = json.dumps(data_str)            
-        self.issue_dict = process.populate_jira_from_json(data_raw)    
-        self.assertTrue(type(self.issue_dict) == dict)
-        self.assertTrue(len(self.issue_dict)>0)
-        self.assertTrue(len(self.issue_dict["metadata"]["issue_key"])>0)
+        for slice in data_str:            
+            self.issue_dict = process.populate_jira_from_json(slice)    
+            self.assertTrue(len(self.issue_dict["history"])>1)
+            self.assertTrue(len(self.issue_dict)>1)
+            self.assertTrue(len(self.issue_dict["metadata"]["issue_key"])>=1)
+
 
     #test how JiraIssue works from a poorly created mock
     def test_create_issue(self, metadata=metadata, history=history):
@@ -60,7 +67,7 @@ class TestIssue(unittest.TestCase):
         self.assertEqual(mock_issue.data_dict['Ready to Develop'], 1.0)
         self.assertEqual(mock_issue.data_dict['In Progress'], 0.79)
         self.assertEqual(mock_issue.data_dict['Review'], 3.0)
-        self.assertEqual(mock_issue.data_dict['Ready'], 0.0)
+        self.assertEqual(mock_issue.data_dict['Ready'], 720.02)
         pass
 
     #assert that we can create a data frame based on a jira issue
@@ -74,8 +81,8 @@ class TestIssue(unittest.TestCase):
         self.assertEqual(len(df), 1)
         self.assertEqual(df.empty, False)
         self.assertEqual(df.ndim, 2)
-        self.assertEqual(df.shape, (1, 20))
-        self.assertEqual(df.size, 20)
+        self.assertEqual(df.shape, (1, 23))
+        self.assertEqual(df.size, 23)
         pass
 
 

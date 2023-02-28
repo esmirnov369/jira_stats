@@ -2,6 +2,7 @@ import json
 from dateutil.parser import parse
 from importlib_metadata import metadata
 import pandas as pd
+from datetime import datetime
 
 class JiraIssue():
     '''jira ticket instance that has some descriptive fields, 
@@ -18,6 +19,7 @@ class JiraIssue():
         self.parent = metadata['parent']
         self.project = metadata['project']
         self.history = history
+        self.priority = metadata['priority']
         self.data_dict = metadata
 
     def calc_time(self):
@@ -27,6 +29,7 @@ class JiraIssue():
         statuses = set()
         self.history[0]['to'] = self.history[1]['from']
         self.data_dict['ready_time'] = 'None'
+        self.data_dict['released_time'] = 'None'
         for val in self.history:
             status = val['to']
             statuses.add(status)
@@ -38,6 +41,8 @@ class JiraIssue():
                 if val['to'] in ('Ready','Done'):
                     self.data_dict['ready_time'] = val['time_stamp']
                 status_name = val['from']
+                if val['to'] in ('Released'):
+                    self.data_dict['released_time'] = val['time_stamp']
                 time_event = parse(val['time_stamp'])
                 time_prev = parse(self.history[index-1]['time_stamp'])
                 self.data_dict[status_name] = self.data_dict[status_name] + \
@@ -47,6 +52,9 @@ class JiraIssue():
         if self.data_dict['ready_time'] != 'None':
             self.data_dict['ready_time'] = parse_date(
                 self.data_dict['ready_time'])
+        if self.data_dict['released_time'] != 'None':
+            self.data_dict['released_time'] = parse_date(
+                self.data_dict['released_time'])    
         for val in statuses:
             if self.data_dict[val] > 0:
                 self.data_dict[val] = round((self.data_dict[val]/3600), 2)
@@ -74,8 +82,9 @@ def dataframe_manipulations(issues_list,folder,filename):
     for issue in issues_list:
         df = df.append(issue.data_dict, ignore_index=True)
     df['created_time'] = pd.to_datetime(df['created_time'])
-    df['ready_time'] = pd.to_datetime(df.ready_time)   
-    bugs_df = df[df['parent'].str.len() > 0]
+    df['ready_time'] = pd.to_datetime(df.ready_time)
+    df['released_time'] = pd.to_datetime(df.released_time)   
+    bugs_df = df.loc[df['issue_type'].isin(['Acceptance bug','Design sub-task'])]
     bugs_df = (bugs_df.groupby(by="parent").size())
     combo = pd.merge(df,bugs_df.rename('defects'),how='left',left_on=['issue_key'],right_on=['parent'])
     accept_array = combo[combo['issue_type'].str.contains("Acceptance bug")]
@@ -87,6 +96,12 @@ def dataframe_manipulations(issues_list,folder,filename):
     defects_array.rename(columns = {'parent':'merge_key'}, inplace = True)
     combo = pd.merge(combo,defects_array,how='left',left_on=['issue_key'],right_on=['merge_key'])
     combo= combo.drop(['merge_key'], axis=1)
+    now = datetime.now()
+    extraction_date_time =  now.strftime("%d/%m/%Y %H:%M:%S")
+    combo['extraction_timestamp'] =  pd.to_datetime(extraction_date_time)
     combo.to_csv(folder+'/'+filename+'.csv', index=False)
     return combo
 
+def push_df_to_sql(dataframe, connection):
+    dataframe.to_sql('TABLE', con=connection, if_exists='replace')
+    return

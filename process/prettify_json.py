@@ -16,6 +16,7 @@ def populate_jira_from_json(json_string):
         team = issue["fields"]["customfield_156807"]["value"]
     except:
         team = 'N/A'
+    priority = issue["fields"]["priority"]["name"]
     try:
         reason =  issue["fields"]["customfield_158100"][0]["value"]
     except:
@@ -45,7 +46,7 @@ def populate_jira_from_json(json_string):
                 transact_list.append(change_dict)
     metadata = {'issue_size': issue_size, 'fix_version': fix_version,  'issue_key': issue_key, 'summary': summary,
                  'issue_type': issue_type, 'implementer': implementer, 'team':team, 'parent': parent, 'project': project,
-                 'epic_name': epic_name, 'reason': reason}
+                 'epic_name': epic_name, 'reason': reason, 'priority': priority}
     issue_dict = {}
     issue_dict['metadata'] = metadata
     issue_dict['history'] = transact_list

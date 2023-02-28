@@ -1,41 +1,42 @@
 import  process
 import os
 import json
+from datetime import datetime
 
 def main():
+    
     #read config
     option_set = process.populate_settings_from_config(os.getcwd() + '\\data\\config.ini')
-    jira_options = option_set[0]
-    sql_options = option_set[1]
+    jira_options = option_set['jira_options']
+    sql_options = option_set['sql_options']
     #create a jira connection instance
     #run query thru connection
+    print("connecting to JIRA")
     try:
         jira = process.JIRA(options=jira_options['settings'], basic_auth=(jira_options['creds']['login'], jira_options['creds']['passw']))
-        issues_list = jira.search_issues(jira_options['jql'], maxResults=1555)
+        issues_list = jira.search_issues(jira_options['jql'], maxResults=1680)
         jql_success = True
     except:
         print('JQL or Auth error')
         jql_success = False
-        return
-    
+
+    #save raw json dump
     if jql_success:
-        with open('reporting/mock_raw.json', 'w') as outfile:
-            outfile.write(process.save_data_json(issues_list,jira,'1'))
-
+        print("dumping json")
         with open('reporting/json_dump.json', 'w') as outfile:
-            outfile.write(process.save_data_json(issues_list,jira,'max'))
-
+            outfile.write(process.save_data_json(issues_list,jira))
 
     with open('reporting/json_dump.json') as json_file:
         data = json.load(json_file)
    
+    #prettyfy json
     pretty_list = []
     for issue in data:
         pretty_list.append(process.populate_jira_from_json(issue))
     json_string = json.dumps(pretty_list)     
     with open('reporting/json_pretty.json', 'w') as outfile:
         outfile.write(json_string)
-    print(f'prettified {len(pretty_list)} issues')
+    print(f'prettified and saved {len(pretty_list)} issues')
 
     with open('reporting/json_pretty.json') as json_file:
         data = json.load(json_file)        
@@ -46,7 +47,12 @@ def main():
         issue = process.JiraIssue(metadata,history)
         issue.calc_time()
         issue_list.append(issue)
-    df = process.dataframe_manipulations(issue_list,'reporting','output')
+    df = process.dataframe_manipulations(issue_list,'reporting','Ops')
+    now = datetime.now()
+    tablename = now.strftime("%d/%m/%Y %H:%M:%S")
+    tablename = ''.join(filter(str.isdigit, tablename))
+    tablename= 'Table'+tablename
+    df.to_sql(tablename, con=sql_options, if_exists='replace')
     return
 
 if __name__ == "__main__":

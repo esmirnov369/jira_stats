@@ -2,6 +2,8 @@ from jira import JIRA
 import json
 from configparser import ConfigParser
 from datetime import date
+import time
+
 
 def populate_settings_from_config(config_file_name):
     configur = ConfigParser()
@@ -28,10 +30,12 @@ def get_jira_data(issue_key, jira_instance):
 
 #calls get_jira_data, constructs a json dump
 def save_data_json(issues_list,jira):
+    start_time = time.time()
     json_array = []
     for issue in issues_list:
         json_array.append(get_jira_data(issue.key, jira))
     print(f'saving total of {len(json_array)} issues to a raw json file')
     json_string = json.dumps(json_array)     
+    print("--- %s seconds ---" % (time.time() - start_time))
     return json_string    
 

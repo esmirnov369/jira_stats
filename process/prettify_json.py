@@ -31,7 +31,7 @@ def populate_jira_from_json(json_string):
     except:
         epic_name = "NA"    
     transact_list = []
-    transact_list.append({'to': 'CREATION', 'from': 'void',
+    transact_list.append({'to': 'New', 'from': 'void',
                          'time_stamp': issue["fields"]["created"]})
 
     for history in issue["changelog"]["histories"]:

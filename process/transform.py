@@ -2,7 +2,7 @@ import json
 from dateutil.parser import parse
 from importlib_metadata import metadata
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 
 class JiraIssue():
     '''jira ticket instance that has some descriptive fields, 
@@ -27,9 +27,10 @@ class JiraIssue():
         """iterate thru a list of status change events and calc time
         populates a data_dict member of the instance with time for each stat"""
         statuses = set()
-        self.history[0]['to'] = self.history[1]['from']
-        self.data_dict['ready_time'] = 'None'
-        self.data_dict['released_time'] = 'None'
+        if len(self.history) > 1:
+            self.history[0]['to'] = self.history[1]['from']
+        self.data_dict['ready_time'] = None
+        self.data_dict['released_time'] = None
         for val in self.history:
             status = val['to']
             statuses.add(status)
@@ -49,15 +50,21 @@ class JiraIssue():
                     (time_event - time_prev).total_seconds()
         self.data_dict['created_time'] = parse_date(
             self.data_dict['created_time'])
-        if self.data_dict['ready_time'] != 'None':
+        if self.data_dict['ready_time'] != None:
             self.data_dict['ready_time'] = parse_date(
                 self.data_dict['ready_time'])
-        if self.data_dict['released_time'] != 'None':
+        if self.data_dict['released_time'] != None:
             self.data_dict['released_time'] = parse_date(
                 self.data_dict['released_time'])    
         for val in statuses:
             if self.data_dict[val] > 0:
                 self.data_dict[val] = round((self.data_dict[val]/3600), 2)
+        last_status = self.history[len(self.history)-1]['to']        
+        self.data_dict['last_status'] = last_status
+        last_transition_time = parse(self.history[len(self.history)-1]['time_stamp'])
+        time_diff = (datetime.now(timezone.utc) -last_transition_time).total_seconds()
+        time_diff = round((time_diff/3600), 2)
+        self.data_dict[last_status] = time_diff
 
     def __repr__(self):
         return f"{self.data_dict}"
@@ -78,12 +85,14 @@ def dataframe_manipulations(issues_list,folder,filename):
     iterate over issues list and append them one by one to a dataframe, save
     data frame on the drive
     '''
-    df = pd.DataFrame()
+    df = pd.DataFrame.from_dict([issues_list[0].data_dict])
+
     for issue in issues_list:
-        df = df.append(issue.data_dict, ignore_index=True)
+        sub_df = pd.DataFrame.from_dict([issue.data_dict])
+        df =  pd.concat([sub_df, df], axis=0)
+
     df['created_time'] = pd.to_datetime(df['created_time'])
-    df['ready_time'] = pd.to_datetime(df.ready_time)
-    df['released_time'] = pd.to_datetime(df.released_time)   
+    df['ready_time'].loc[df['ready_time'].notnull()] =  pd.to_datetime(df['ready_time'].loc[df['ready_time'].notnull()] )
     bugs_df = df.loc[df['issue_type'].isin(['Acceptance bug','Design sub-task'])]
     bugs_df = (bugs_df.groupby(by="parent").size())
     combo = pd.merge(df,bugs_df.rename('defects'),how='left',left_on=['issue_key'],right_on=['parent'])
@@ -96,11 +105,21 @@ def dataframe_manipulations(issues_list,folder,filename):
     defects_array.rename(columns = {'parent':'merge_key'}, inplace = True)
     combo = pd.merge(combo,defects_array,how='left',left_on=['issue_key'],right_on=['merge_key'])
     combo= combo.drop(['merge_key'], axis=1)
-    now = datetime.now()
-    extraction_date_time =  now.strftime("%d/%m/%Y %H:%M:%S")
-    combo['extraction_timestamp'] =  pd.to_datetime(extraction_date_time)
-    combo.to_csv(folder+'/'+filename+'.csv', index=False)
+
+    
     return combo
+
+def save_df_to_csv(df, folder,output_name):
+    df.to_csv(folder+'/'+output_name+'.csv', index=False,encoding='utf-8')
+
+def calc_cycle_time(df,setup = 'ongoing'):
+    if setup == 'API':
+        collist = ['Planned', 'Specification Review','ToDo','Ready to Develop','In Progress','Review','Resolved','Testing','Ready']
+        df['cycle_hours'] = df[collist].sum(axis=1)
+        df['cycle_days'] = df['cycle_hours']/24
+    else:
+        df = df
+    return df
 
 def push_df_to_sql(dataframe, connection):
     dataframe.to_sql('TABLE', con=connection, if_exists='replace')

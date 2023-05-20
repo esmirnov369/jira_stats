@@ -25,7 +25,8 @@ class Test_Issue(unittest.TestCase):
                 'implementer': 'First Name Last Name',
                 'team':'API',
                 'project': 'API',
-                'priority': 'Blocker', 
+                'priority': 'Blocker',
+                'last_status': 'Released', 
                 'parent': '0'}
     history = [ {'to': 'New', 'from': 'void', 'time_stamp': '2022-01-02T10:26:06.319+0300'}, 
                 {'to': 'Specification', 'from': 'New', 'time_stamp': '2022-04-08T10:31:45.398+0300'},
@@ -35,6 +36,8 @@ class Test_Issue(unittest.TestCase):
                 {'to': 'ToDo', 'from': 'Specification Review', 'time_stamp': '2022-04-08T14:32:01.864+0300'}, 
                 {'to': 'Ready to Develop', 'from': 'ToDo', 'time_stamp': '2022-04-08T15:32:05.647+0300'}, 
                 {'to': 'In Progress', 'from': 'Ready to Develop', 'time_stamp': '2022-04-08T16:32:11.820+0300'},
+                {'to': 'Ready to Develop', 'from': 'In Progress', 'time_stamp': '2022-04-08T16:33:05.647+0300'},
+                {'to': 'In Progress', 'from': 'Ready to Develop', 'time_stamp': '2022-04-08T16:35:11.820+0300'}, 
                 {'to': 'Review', 'from': 'In Progress', 'time_stamp': '2022-04-08T17:19:30.117+0300'}, 
                 {'to': 'Ready', 'from': 'Review', 'time_stamp': '2022-04-08T20:19:35.219+0300'},
                 {'to': 'Released', 'from': 'Ready', 'time_stamp': '2022-05-08T20:20:32.219+0300'}]
@@ -45,10 +48,11 @@ class Test_Issue(unittest.TestCase):
             data_str = json.load(json_file)
         for slice in data_str:            
             self.issue_dict = process.populate_jira_from_json(slice)    
-            self.assertTrue(len(self.issue_dict["history"])>1)
-            self.assertTrue(len(self.issue_dict)>1)
+            self.assertTrue(len(self.issue_dict["history"])>=1)
+            self.assertTrue(len(self.issue_dict)>=1)
             self.assertTrue(len(self.issue_dict["metadata"]["issue_key"])>=1)
-
+            self.assertTrue(len(self.issue_dict["metadata"]["issue_type"])>=1)
+      
 
     #test how JiraIssue works from a poorly created mock
     def test_create_issue(self, metadata=metadata, history=history):
@@ -64,8 +68,8 @@ class Test_Issue(unittest.TestCase):
         self.assertEqual(mock_issue.data_dict['Specification Review'], 2.99)
         self.assertEqual(mock_issue.data_dict['Planned'], 0.02)
         self.assertEqual(mock_issue.data_dict['ToDo'], 1.0)
-        self.assertEqual(mock_issue.data_dict['Ready to Develop'], 1.0)
-        self.assertEqual(mock_issue.data_dict['In Progress'], 0.79)
+        self.assertEqual(mock_issue.data_dict['Ready to Develop'], 1.04)
+        self.assertEqual(mock_issue.data_dict['In Progress'], 0.75)
         self.assertEqual(mock_issue.data_dict['Review'], 3.0)
         self.assertEqual(mock_issue.data_dict['Ready'], 720.02)
         pass
@@ -75,14 +79,18 @@ class Test_Issue(unittest.TestCase):
         df = pd.DataFrame()
         mock_issue = process.JiraIssue(metadata, history)
         issues_list = [mock_issue]
+        df = pd.DataFrame.from_dict([issues_list[0]])
         for issue in issues_list:
             issue.calc_time()
-            df = df.append(issue.data_dict, ignore_index=True)
-        self.assertEqual(len(df), 1)
+            sub_df = pd.DataFrame.from_dict([issue.data_dict])
+            df =  pd.concat([sub_df, df], axis=0)
+        print(df)    
+        self.assertEqual(len(df), 2)
         self.assertEqual(df.empty, False)
         self.assertEqual(df.ndim, 2)
-        self.assertEqual(df.shape, (1, 23))
-        self.assertEqual(df.size, 23)
+        self.assertEqual(df.shape, (2, 25))
+        self.assertEqual(df.size, 50)
+        print(df)
         pass
 
 

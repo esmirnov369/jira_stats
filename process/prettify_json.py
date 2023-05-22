@@ -1,9 +1,12 @@
 import json
 
 #gets json string, parses into data structures
-def populate_jira_from_json(json_string):
-    issue = json.loads(json_string)
+def populate_jira_from_json(issue):
     summary = issue["fields"]["summary"]
+    try:
+       components = issue["fields"]["components"][0]["name"] 
+    except:
+        components = 'N/A'  
     issue_type = issue["fields"]["issuetype"]["name"]
     if issue_type in ('Acceptance bug','Design sub-task','Sub-task'):
         parent = issue["fields"]["parent"]["key"]
@@ -46,7 +49,7 @@ def populate_jira_from_json(json_string):
                 transact_list.append(change_dict)
     metadata = {'issue_size': issue_size, 'fix_version': fix_version,  'issue_key': issue_key, 'summary': summary,
                  'issue_type': issue_type, 'implementer': implementer, 'team':team, 'parent': parent, 'project': project,
-                 'epic_name': epic_name, 'reason': reason, 'priority': priority}
+                 'epic_name': epic_name, 'reason': reason, 'priority': priority, 'components':components}
     issue_dict = {}
     issue_dict['metadata'] = metadata
     issue_dict['history'] = transact_list

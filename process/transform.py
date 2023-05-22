@@ -18,6 +18,7 @@ class JiraIssue():
         self.team = metadata['team']
         self.parent = metadata['parent']
         self.project = metadata['project']
+        self.components = metadata['components']
         self.history = history
         self.priority = metadata['priority']
         self.data_dict = metadata
@@ -37,7 +38,10 @@ class JiraIssue():
             self.data_dict[status] = 0         
         for index, val in enumerate(self.history):
             if val['from'] == 'void':
-                self.data_dict['created_time'] = val['time_stamp']
+                created_stamp =  val['time_stamp']
+                self.data_dict['created_time'] = created_stamp
+                self.data_dict['lifetime'] = (datetime.now(timezone.utc) - parse(created_stamp)).total_seconds()
+                self.data_dict['lifetime'] =   round((self.data_dict['lifetime']/3600), 2)   
             else:
                 if val['to'] in ('Ready','Done'):
                     self.data_dict['ready_time'] = val['time_stamp']
@@ -61,7 +65,7 @@ class JiraIssue():
                 self.data_dict[val] = round((self.data_dict[val]/3600), 2)
         last_status = self.history[len(self.history)-1]['to']        
         self.data_dict['last_status'] = last_status
-        last_transition_time = parse(self.history[len(self.history)-1]['time_stamp'])
+        last_transition_time = parse(self.history[len(self.history)-1]['time_stamp'])                         
         time_diff = (datetime.now(timezone.utc) -last_transition_time).total_seconds()
         time_diff = round((time_diff/3600), 2)
         self.data_dict[last_status] = time_diff
@@ -112,11 +116,14 @@ def dataframe_manipulations(issues_list,folder,filename):
 def save_df_to_csv(df, folder,output_name):
     df.to_csv(folder+'/'+output_name+'.csv', index=False,encoding='utf-8')
 
-def calc_cycle_time(df,setup = 'ongoing'):
+def calc_cycle_time(df,setup = 'API'):
     if setup == 'API':
         collist = ['Planned', 'Specification Review','ToDo','Ready to Develop','In Progress','Review','Resolved','Testing','Ready']
-        df['cycle_hours'] = df[collist].sum(axis=1)
-        df['cycle_days'] = df['cycle_hours']/24
+        for col in collist:
+            if col not in df.columns:
+                df[col] = 0
+        df['cycle_hours_api'] = df.query("project == 'API'")[collist].sum()
+        df['cycle_days_api'] = df['cycle_hours_api']/24
     else:
         df = df
     return df

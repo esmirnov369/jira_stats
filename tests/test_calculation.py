@@ -26,7 +26,8 @@ class Test_Issue(unittest.TestCase):
                 'team':'API',
                 'project': 'API',
                 'priority': 'Blocker',
-                'last_status': 'Released', 
+                'last_status': 'Released',
+                'components': 'MotherAPI', 
                 'parent': '0'}
     history = [ {'to': 'New', 'from': 'void', 'time_stamp': '2022-01-02T10:26:06.319+0300'}, 
                 {'to': 'Specification', 'from': 'New', 'time_stamp': '2022-04-08T10:31:45.398+0300'},
@@ -46,7 +47,7 @@ class Test_Issue(unittest.TestCase):
     def test_populate_jira_from_json(self):
         with open('reporting/json_dump.json') as json_file:
             data_str = json.load(json_file)
-        for slice in data_str:            
+        for slice in data_str['issues']:            
             self.issue_dict = process.populate_jira_from_json(slice)    
             self.assertTrue(len(self.issue_dict["history"])>=1)
             self.assertTrue(len(self.issue_dict)>=1)
@@ -88,8 +89,8 @@ class Test_Issue(unittest.TestCase):
         self.assertEqual(len(df), 2)
         self.assertEqual(df.empty, False)
         self.assertEqual(df.ndim, 2)
-        self.assertEqual(df.shape, (2, 25))
-        self.assertEqual(df.size, 50)
+        self.assertEqual(df.shape, (2, 27))
+        self.assertEqual(df.size, 54)
         print(df)
         pass
 

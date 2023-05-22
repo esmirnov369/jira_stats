@@ -12,13 +12,13 @@ def main():
     
     #create a jira connection instance
     #run query thru connection
-    jql_success = True
+    jql_success = False
    
     if jql_success != False:
         print("connecting to JIRA")
         try:
             jira = process.JIRA(options=jira_options['settings'], basic_auth=(jira_options['creds']['login'], jira_options['creds']['passw']),)
-            issues_list = jira.search_issues(jira_options['jql'],expand='changelog', maxResults=1,json_result=True)
+            issues_list = jira.search_issues(jira_options['jql'],expand='changelog', maxResults=1000,json_result=True)
             jql_success = True
         except:
             print('JQL or Auth error')
@@ -29,12 +29,7 @@ def main():
         print("dumping jsons")
 
         with open('reporting/json_dump.json', 'w') as fp:
-            json.dump(issues_list, fp)
-          
-        #with open('reporting/json_dump.json', 'w') as outfile:
-        #    outfile.write(process.save_data_json(issues_list,jira))
- 
-
+            json.dump(issues_list, fp)       
   
     print("reading json")
     with open('reporting/json_dump.json') as json_file:
@@ -43,7 +38,7 @@ def main():
    
     #prettyfy json
     pretty_list = []
-    for issue in issues_list:
+    for issue in data['issues']:
         pretty_list.append(process.populate_jira_from_json(issue))
     json_string = json.dumps(pretty_list)     
     with open('reporting/json_pretty.json', 'w') as outfile:

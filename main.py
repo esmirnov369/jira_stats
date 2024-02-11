@@ -68,7 +68,6 @@ def main():
         issue_list.append(issue)
     df = process.dataframe_manipulations(issue_list, "reporting", "Ops")
     df = process.calc_cycle_time(df)
-    df = process.parse_epics_MB(df)
     process.save_df_to_csv(df, "reporting", "cycle")
     return
 

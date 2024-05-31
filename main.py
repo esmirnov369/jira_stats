@@ -59,6 +59,7 @@ def main():
 
     with open("reporting/json_pretty.json") as json_file:
         data = json.load(json_file)
+    print(data)
     issue_list = []
     for list_item in data:
         metadata = list_item["metadata"]
@@ -67,7 +68,6 @@ def main():
         issue.calc_time()
         issue_list.append(issue)
     df = process.dataframe_manipulations(issue_list, "reporting", "Ops")
-    df = process.calc_cycle_time(df)
     process.save_df_to_csv(df, "reporting", "cycle")
     return
 

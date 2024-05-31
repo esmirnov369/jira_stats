@@ -140,29 +140,6 @@ def save_df_to_csv(df, folder, output_name):
     df.to_csv(folder + "/" + output_name + ".csv", index=False, encoding="utf-8")
 
 
-def calc_cycle_time(df, setup="agnostic"):
-    if setup == "API":
-        collist = [
-            "Planned",
-            "Specification Review",
-            "ToDo",
-            "Ready to Develop",
-            "In Progress",
-            "Review",
-            "Resolved",
-            "Testing",
-            "Ready",
-        ]
-        for col in collist:
-            if col not in df.columns:
-                df[col] = 0
-        df["cycle_hours_api"] = df.query("project == 'API'")[collist].sum(axis=1)
-        df["cycle_days_api"] = df["cycle_hours_api"] / 24  # 24 hours in a day
-    else:
-        df = df
-    return df
-
-
 def push_df_to_sql(dataframe, connection):
     dataframe.to_sql("TABLE", con=connection, if_exists="replace")
     return

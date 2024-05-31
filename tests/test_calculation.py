@@ -146,7 +146,7 @@ class Test_Issue(unittest.TestCase):
             issue.calc_time()
             sub_df = pd.DataFrame.from_dict([issue.data_dict])
             df = pd.concat([sub_df, df], axis=0)
-        df = process.calc_cycle_time(df)
+
         ctime = 0
         for col in df.columns.intersection(
             [
@@ -165,12 +165,9 @@ class Test_Issue(unittest.TestCase):
         self.assertEqual(len(df), 2)
         self.assertEqual(df.empty, False)
         self.assertEqual(df.ndim, 2)
-        self.assertEqual(df.shape, (2, 31))
-        self.assertEqual(df.size, 62)
-        self.assertEqual(df["cycle_hours_api"].iloc[0], ctime)
-        self.assertEqual(
-            df["cycle_days_api"].iloc[0], df["cycle_hours_api"].iloc[0] / 24
-        )
+        self.assertEqual(df.shape, (2, 28))
+        self.assertEqual(df.size, 56)
+
         pass
 
 

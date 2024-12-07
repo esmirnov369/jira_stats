@@ -2,19 +2,21 @@ import process
 import os
 import json
 from datetime import datetime
+import time
 
 
 def main():
     # read config
     option_set = process.populate_settings_from_config(
-        os.getcwd() + "\\data\\config.ini"
+        os.getcwd() + r'\data\config.ini'
     )
     jira_options = option_set["jira_options"]
     sql_options = option_set["sql_options"]
 
     # create a jira connection instance
-    # run query thru connection
+    # run query thru connectionя
     jql_success = True
+    run_type = 'Full'
 
     if jql_success != False:
         print("connecting to JIRA")
@@ -30,7 +32,7 @@ def main():
                 jira_options["jql"],
                 expand="changelog",
                 maxResults=1000,
-                json_result=True,
+                json_result=True
             )
             jql_success = True
         except:
@@ -40,8 +42,8 @@ def main():
     # save raw json dump
     if jql_success:
         print("dumping jsons")
-
-        with open("reporting/json_dump.json", "w") as fp:
+        path =  os.getcwd() + r'/reporting/json_dump.json'
+        with open(path, "w") as fp:
             json.dump(issues_list, fp)
 
     print("reading json")
@@ -59,7 +61,7 @@ def main():
 
     with open("reporting/json_pretty.json") as json_file:
         data = json.load(json_file)
-    print(data)
+    #print(data)
     issue_list = []
     for list_item in data:
         metadata = list_item["metadata"]
@@ -68,7 +70,8 @@ def main():
         issue.calc_time()
         issue_list.append(issue)
     df = process.dataframe_manipulations(issue_list, "reporting", "Ops")
-    process.save_df_to_csv(df, "reporting", "cycle")
+    timestr = time.strftime("%Y%m%d")
+    process.save_df_to_csv(df, "reporting", "cycle"+timestr)
     return
 
 

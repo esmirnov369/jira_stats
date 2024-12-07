@@ -162,7 +162,7 @@ class Test_Issue(unittest.TestCase):
             ]
         ):
             ctime = ctime + df[col].iloc[0]
-        self.assertEqual(len(df), 2)
+        self.assertEqual(len(df), 21)
         self.assertEqual(df.empty, False)
         self.assertEqual(df.ndim, 2)
         self.assertEqual(df.shape, (2, 28))

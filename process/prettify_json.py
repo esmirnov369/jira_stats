@@ -25,6 +25,18 @@ def populate_jira_from_json(issue):
         team = issue["fields"]["customfield_156807"]["value"]
     except:
         team = "N/A"
+    try:
+        Product = issue["fields"]["customfield_177900"]["value"]
+    except:
+        Product = "N/A"    
+    try:
+        PlannedStart = issue["fields"]["customfield_10100"]
+    except:
+        PlannedStart = "N/A"   
+    try:
+        PlannedEnd = issue["fields"]["customfield_10101"]
+    except:
+        PlannedEnd = "N/A"       
     priority = issue["fields"]["priority"]["name"]
     try:
         reason = issue["fields"]["customfield_158100"][0]["value"]
@@ -68,9 +80,12 @@ def populate_jira_from_json(issue):
         "reason": reason,
         "priority": priority,
         "components": components,
+        "PlannedStart":PlannedStart,
+        "PlannedEnd":PlannedEnd,
+        "Product": Product
     }
     issue_dict = {}
     issue_dict["metadata"] = metadata
     issue_dict["history"] = transact_list
-    print(f"finished processing {issue_key}")
+    #print(f"finished processing {issue_key}")
     return issue_dict

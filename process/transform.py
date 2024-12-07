@@ -25,18 +25,23 @@ class JiraIssue:
         self.project = metadata["project"]
         self.components = metadata["components"]
         self.priority = metadata["priority"]
-
+        self.PlannedStart = metadata["PlannedStart"]
+        self.PlannedEnd = metadata["PlannedEnd"]
+        self.Product = metadata["Product"]
         self.history = history
         self.data_dict = metadata
 
     def calc_time(self):
-        print(f"processing {self.issue_key}")
+        #print(f"processing {self.issue_key}")
         """iterate thru a list of status change events and calc time
         populates a data_dict member of the instance with time for each stat"""
         statuses = set()
         if len(self.history) > 1:
             self.history[0]["to"] = self.history[1]["from"]
         self.data_dict["ready_time"] = None
+        self.data_dict["released_time"] = None
+        self.data_dict["to_progress"] = None
+        self.data_dict["from_review"] = None
         self.data_dict["released_time"] = None
         for val in self.history:
             status = val["to"]
@@ -56,6 +61,14 @@ class JiraIssue:
                 if val["to"] in ("Ready", "Done", "Acknowledged"):
                     self.data_dict["ready_time"] = val["time_stamp"]
                 status_name = val["from"]
+                if val["to"] in ("In Progress"):
+                    if self.data_dict["to_progress"] is None:
+                        self.data_dict["to_progress"]  = val["time_stamp"]
+                        self.data_dict["to_progress"] = parse_date(self.data_dict["to_progress"])   
+                if val["from"] in ("Review"):
+                    if self.data_dict["from_review"] is None:
+                        self.data_dict["from_review"]= val["time_stamp"]
+                        self.data_dict["from_review"] = parse_date(self.data_dict["from_review"])        
                 if val["to"] in ("Released"):
                     self.data_dict["released_time"] = val["time_stamp"]
                 time_event = parse(val["time_stamp"])

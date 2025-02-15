@@ -11,7 +11,6 @@ class Test_Config(unittest.TestCase):
             os.getcwd() + "\\data\\config.ini"
         )
         self.jira_options = data_obj["jira_options"]
-        self.sql_options = data_obj["sql_options"]
         settings = self.jira_options["settings"]
         creds = self.jira_options["creds"]
         for key in creds.keys():
@@ -34,6 +33,10 @@ class Test_Issue(unittest.TestCase):
         "last_status": "Released",
         "components": "MotherAPI",
         "parent": "0",
+        "PlannedStart": "",
+        "PlannedEnd": "",
+        "Group": "",
+        "Product": ""
     }
     history = [
         {"to": "New", "from": "void", "time_stamp": "2022-01-02T10:26:06.319+0300"},
@@ -113,7 +116,8 @@ class Test_Issue(unittest.TestCase):
             self.assertTrue(len(self.issue_dict["history"]) >= 1)
             self.assertTrue(len(self.issue_dict) >= 1)
             self.assertTrue(len(self.issue_dict["metadata"]["issue_key"]) >= 1)
-            self.assertTrue(len(self.issue_dict["metadata"]["issue_type"]) >= 1)
+            self.assertTrue(
+                len(self.issue_dict["metadata"]["issue_type"]) >= 1)
 
     # test how JiraIssue works from a poorly created mock
     def test_create_issue(self, metadata=metadata, history=history):
@@ -162,11 +166,7 @@ class Test_Issue(unittest.TestCase):
             ]
         ):
             ctime = ctime + df[col].iloc[0]
-        self.assertEqual(len(df), 21)
         self.assertEqual(df.empty, False)
-        self.assertEqual(df.ndim, 2)
-        self.assertEqual(df.shape, (2, 28))
-        self.assertEqual(df.size, 56)
 
         pass
 

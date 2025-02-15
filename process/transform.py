@@ -1,6 +1,6 @@
 import json
 from dateutil.parser import parse
-from importlib_metadata import metadata
+# from importlib_metadata import metadata
 import pandas as pd
 import numpy as np
 from datetime import datetime, timezone
@@ -14,25 +14,22 @@ class JiraIssue:
     """
 
     def __init__(self, metadata, history):
-        self.issue_key = metadata["issue_key"]
-        self.summary = metadata["summary"]
-        self.issue_type = metadata["issue_type"]
-        self.implementer = metadata["implementer"]
-        self.fix_version = metadata["fix_version"]
-        self.issue_size = metadata["issue_size"]
-        self.team = metadata["team"]
-        self.parent = metadata["parent"]
-        self.project = metadata["project"]
-        self.components = metadata["components"]
-        self.priority = metadata["priority"]
-        self.PlannedStart = metadata["PlannedStart"]
-        self.PlannedEnd = metadata["PlannedEnd"]
-        self.Product = metadata["Product"]
         self.history = history
         self.data_dict = metadata
 
+        # List of keys to be assigned to instance variables
+        keys = [
+            "issue_key", "summary", "issue_type", "implementer", "fix_version",
+            "issue_size", "team", "parent", "project", "components", "priority",
+            "PlannedStart", "PlannedEnd", "Product"
+        ]
+
+        # Assign values from metadata to instance variables
+        for key in keys:
+            setattr(self, key, metadata.get(key))
+
     def calc_time(self):
-        #print(f"processing {self.issue_key}")
+        # print(f"processing {self.issue_key}")
         """iterate thru a list of status change events and calc time
         populates a data_dict member of the instance with time for each stat"""
         statuses = set()
@@ -63,12 +60,14 @@ class JiraIssue:
                 status_name = val["from"]
                 if val["to"] in ("In Progress"):
                     if self.data_dict["to_progress"] is None:
-                        self.data_dict["to_progress"]  = val["time_stamp"]
-                        self.data_dict["to_progress"] = parse_date(self.data_dict["to_progress"])   
+                        self.data_dict["to_progress"] = val["time_stamp"]
+                        self.data_dict["to_progress"] = parse_date(
+                            self.data_dict["to_progress"])
                 if val["from"] in ("Review"):
                     if self.data_dict["from_review"] is None:
-                        self.data_dict["from_review"]= val["time_stamp"]
-                        self.data_dict["from_review"] = parse_date(self.data_dict["from_review"])        
+                        self.data_dict["from_review"] = val["time_stamp"]
+                        self.data_dict["from_review"] = parse_date(
+                            self.data_dict["from_review"])
                 if val["to"] in ("Released"):
                     self.data_dict["released_time"] = val["time_stamp"]
                 time_event = parse(val["time_stamp"])
@@ -77,20 +76,25 @@ class JiraIssue:
                     self.data_dict[status_name]
                     + (time_event - time_prev).total_seconds()
                 )
-        self.data_dict["created_time"] = parse_date(self.data_dict["created_time"])
+        self.data_dict["created_time"] = parse_date(
+            self.data_dict["created_time"])
         if self.data_dict["ready_time"] != None:
-            self.data_dict["ready_time"] = parse_date(self.data_dict["ready_time"])
+            self.data_dict["ready_time"] = parse_date(
+                self.data_dict["ready_time"])
         if self.data_dict["released_time"] != None:
             self.data_dict["released_time"] = parse_date(
                 self.data_dict["released_time"]
             )
         for val in statuses:
             if self.data_dict[val] > 0:
-                self.data_dict[val] = round((self.data_dict[val] / SECONDS_IN_HOUR), 2)
+                self.data_dict[val] = round(
+                    (self.data_dict[val] / SECONDS_IN_HOUR), 2)
         last_status = self.history[len(self.history) - 1]["to"]
         self.data_dict["last_status"] = last_status
-        last_transition_time = parse(self.history[len(self.history) - 1]["time_stamp"])
-        time_diff = (datetime.now(timezone.utc) - last_transition_time).total_seconds()
+        last_transition_time = parse(
+            self.history[len(self.history) - 1]["time_stamp"])
+        time_diff = (datetime.now(timezone.utc) -
+                     last_transition_time).total_seconds()
         time_diff = round((time_diff / SECONDS_IN_HOUR), 2)
         self.data_dict[last_status] = time_diff
 
@@ -123,7 +127,8 @@ def dataframe_manipulations(issues_list, folder, filename):
     df["ready_time"].loc[df["ready_time"].notnull()] = pd.to_datetime(
         df["ready_time"].loc[df["ready_time"].notnull()]
     )
-    bugs_df = df.loc[df["issue_type"].isin(["Acceptance bug", "Design sub-task"])]
+    bugs_df = df.loc[df["issue_type"].isin(
+        ["Acceptance bug", "Design sub-task"])]
     bugs_df = bugs_df.groupby(by="parent").size()
     combo = pd.merge(
         df,
@@ -150,9 +155,5 @@ def dataframe_manipulations(issues_list, folder, filename):
 
 
 def save_df_to_csv(df, folder, output_name):
-    df.to_csv(folder + "/" + output_name + ".csv", index=False, encoding="utf-8")
-
-
-def push_df_to_sql(dataframe, connection):
-    dataframe.to_sql("TABLE", con=connection, if_exists="replace")
-    return
+    df.to_csv(folder + "/" + output_name + ".csv",
+              index=False, encoding="utf-8")

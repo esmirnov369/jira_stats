@@ -11,38 +11,41 @@ def main():
         os.getcwd() + r'\data\config.ini'
     )
     jira_options = option_set["jira_options"]
-    sql_options = option_set["sql_options"]
 
     # create a jira connection instance
     # run query thru connectionя
-    jql_success = True
-    run_type = 'Full'
+    jql_success = False
 
-    if jql_success != False:
-        print("connecting to JIRA")
-        try:
-            jira = process.JIRA(
-                options=jira_options["settings"],
-                basic_auth=(
-                    jira_options["creds"]["login"],
-                    jira_options["creds"]["passw"],
-                ),
-            )
-            issues_list = jira.search_issues(
-                jira_options["jql"],
-                expand="changelog",
-                maxResults=1000,
-                json_result=True
-            )
-            jql_success = True
-        except:
-            print("JQL or Auth error")
-            jql_success = False
+    print("connecting to JIRA")
+    try:
+        jira = process.JIRA(
+            options=jira_options["settings"],
+            basic_auth=(
+                jira_options["creds"]["login"],
+                jira_options["creds"]["passw"],
+            ),
+        )
+        issues_list = jira.search_issues(
+            jira_options["jql"],
+            expand="changelog",
+            maxResults=1000,
+            json_result=True
+        )
+        jql_success = True
+    except process.JIRAError as e:
+        if e.status_code == 401:
+            print("Authentication error:", e)
+        else:
+            print("JQL error:", e)
+        jql_success = False
+    except Exception as e:
+        print("Unexpected error:", e)
+        jql_success = False
 
     # save raw json dump
     if jql_success:
         print("dumping jsons")
-        path =  os.getcwd() + r'/reporting/json_dump.json'
+        path = os.getcwd() + r'/reporting/json_dump.json'
         with open(path, "w") as fp:
             json.dump(issues_list, fp)
 
@@ -61,7 +64,7 @@ def main():
 
     with open("reporting/json_pretty.json") as json_file:
         data = json.load(json_file)
-    #print(data)
+    # print(data)
     issue_list = []
     for list_item in data:
         metadata = list_item["metadata"]

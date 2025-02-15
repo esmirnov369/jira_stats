@@ -1,4 +1,4 @@
-from jira import JIRA
+from jira import JIRA, JIRAError
 import json
 from configparser import ConfigParser
 from datetime import date
@@ -26,6 +26,5 @@ def populate_settings_from_config(config_file_name):
         "jql": jql_query,
         "runtype": runtype,
     }
-    sql_options = configur.get("creds", "sql_conn")
-    data_object = {"jira_options": jira_options, "sql_options": sql_options}
+    data_object = {"jira_options": jira_options}
     return data_object
